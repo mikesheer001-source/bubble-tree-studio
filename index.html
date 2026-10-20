@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
+<meta name="theme-color" content="#0a1121">
+<meta name="description" content="Free interactive bubble tree editor. Drag, connect, expand, zoom, and save mind maps.">
+<title>Bubble Tree Studio — Interactive Mind Map</title>
+<style>
+:root{color-scheme:dark;--bg:#080f1e;--panel:#111d31;--border:#30405b;--muted:#95abc8;--text:#e8f4ff;--green:#39ceaa}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+body{overscroll-behavior-y:none}
+button,input,textarea{font:inherit}
+button{cursor:pointer;border:1px solid #354b66;background:#1c2b45;color:#e8f5ff;border-radius:9px;font-size:12px;font-weight:680;padding:10px 12px;touch-action:manipulation}
+button:hover{background:#273d59}
+button:active{transform:scale(.98)}
+button.primary{background:#087966;border-color:#32bca0}
+button.active{background:#6950a7;border-color:#b8a5ff}
+button.danger{color:#ffb0b9}
+button:focus-visible,input:focus-visible{outline:2px solid #63eac3;outline-offset:2px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:#111a2c;border-bottom:1px solid var(--border)}
+.brand{display:flex;gap:10px;align-items:center;font-size:17px;font-weight:850;letter-spacing:-.4px}
+.logo{display:grid;place-items:center;width:33px;height:33px;background:#124b50;border:1px solid #2aaea1;border-radius:12px;color:#a5ffe3;font-size:22px}
+.subtitle{font-size:11px;color:var(--muted);font-weight:450;margin-top:2px;letter-spacing:0}
+.headtag{font:700 11px ui-monospace,monospace;color:#79edbc;white-space:nowrap}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:10px 13px;background:#101a2d;border-bottom:1px solid #26374f}
+main{display:grid;grid-template-columns:minmax(0,1fr) 265px;height:calc(100dvh - 115px);min-height:470px}
+.stage{position:relative;min-width:0;min-height:0;overflow:hidden;touch-action:none!important;overscroll-behavior:contain;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;background:radial-gradient(ellipse at 50% 40%,#182943 0%,#0c182f 60%,#07101f 100%)}
+.stage:before{content:"";pointer-events:none;position:absolute;inset:0;background-image:radial-gradient(#66809f .8px,transparent 1px);background-size:24px 24px;opacity:.20}
+svg{display:block;width:100%;height:100%;touch-action:none!important;overscroll-behavior:contain;cursor:grab;position:relative}
+svg.grabbing{cursor:grabbing}
+.hint{position:absolute;bottom:13px;left:50%;transform:translateX(-50%);pointer-events:none;background:#101c32e8;border:1px solid #304763;color:#abc0dc;border-radius:9px;padding:9px 12px;white-space:nowrap;font-size:11px;max-width:calc(100% - 24px);text-align:center}
+.corner{position:absolute;top:12px;left:12px;color:#7694b3;font:11px ui-monospace,monospace;pointer-events:none}
+.zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:7px}
+.zoom button{width:38px;height:38px;padding:0;font-size:20px;background:#17263ddd}
+aside{background:#111d31;border-left:1px solid var(--border);padding:18px;overflow:auto}
+.section-title{color:#90a8c8;text-transform:uppercase;letter-spacing:1.2px;font-size:10px;font-weight:750;margin-bottom:13px}
+.field{margin:0 0 14px}
+label{display:block;color:#bbcee2;font-size:11px;font-weight:700;margin:0 0 7px}
+input[type=text]{width:100%;border:1px solid #3b5270;background:#0a1527;border-radius:9px;padding:11px;color:white;font-size:14px;min-width:0}
+.colorrow{display:flex;align-items:center;gap:9px}
+input[type=color]{height:40px;width:50px;padding:3px;border-radius:8px;border:1px solid #405472;background:#192942}
+.colorrow span{font-size:11px;color:#94abc5}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions button{padding:11px 5px;font-size:11px}
+.actions button.wide{grid-column:1/-1}
+.note{font-size:11px;color:#96adca;line-height:1.6;border-top:1px solid #2c3f58;padding-top:13px;margin-top:18px}
+#status{font-size:11px;color:#76e4bd;margin-top:15px;line-height:1.5;min-height:33px}
+#counts{margin-top:12px;font:11px ui-monospace,monospace;color:#708ba9}
+.dialog{position:fixed;inset:0;background:#030813ba;display:none;align-items:center;justify-content:center;padding:14px;z-index:20}
+.dialog.open{display:flex}
+.modal{background:#17263c;border:1px solid #446080;border-radius:14px;width:min(720px,100%);padding:16px;box-shadow:0 18px 70px #0009}
+.modal h2{font-size:17px;margin:0 0 6px}
+.modal p{font-size:12px;color:#9bb1ce;line-height:1.5}
+textarea{width:100%;min-height:240px;max-height:50dvh;background:#081325;color:#a6f5d3;border:1px solid #3b5271;border-radius:8px;padding:10px;font:12px ui-monospace,monospace;resize:vertical}
+.modal-buttons{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end;margin-top:10px}
+@media(max-width:700px){
+header{padding:9px 11px}.brand{font-size:15px}.subtitle{font-size:10px}.headtag{display:none}
+.toolbar{gap:5px;padding:7px 8px}.toolbar button{font-size:11px;padding:9px 10px}
+main{display:flex;flex-direction:column;height:calc(100dvh - 105px);min-height:440px}
+.stage{flex:1;min-height:250px}
+aside{flex:none;max-height:245px;overflow:auto;border-left:0;border-top:1px solid var(--border);padding:10px 12px}
+.aside-top{display:flex;align-items:center;justify-content:space-between}.section-title{margin:0 0 9px}
+.inspector-grid{display:flex;align-items:end;gap:9px}.inspector-grid .field{flex:1;margin-bottom:8px;min-width:0}
+.inspector-grid .field.color-field{flex:0 0 52px}
+.colorrow span{display:none}.colorrow input{width:48px}
+.actions{display:flex;flex-wrap:wrap;gap:6px}.actions button{flex:1;font-size:11px}
+.actions button.wide{flex:1}
+.note{display:none}#status{margin-top:8px;min-height:16px}#counts{display:none}
+.hint{bottom:7px;padding:6px 9px;font-size:10px}
+}
+@media(max-height:650px) and (max-width:700px){.stage{min-height:180px}aside{max-height:185px}header{padding:6px 10px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><span class="logo">◉</span><div>Bubble Tree Studio<div class="subtitle">Drag · Connect · Organize · Create</div></div></div><span class="headtag">● FREE & EDITABLE</span></header>
+<nav class="toolbar" aria-label="Map controls">
+<button id="add" class="primary">＋ Bubble</button>
+<button id="child" class="primary">＋ Child</button>
+<button id="link">↗ Connect</button>
+<button id="arrange">◎ Arrange</button>
+<button id="lock">🔓 Lock view</button>
+<button id="fit">⊡ Fit</button>
+<button id="undo">↶ Undo</button>
+<button id="data">{ } Data</button>
+</nav>
+<main>
+<div class="stage" id="stage">
+<svg id="canvas" role="application" aria-label="Interactive bubble mind-map canvas">
+<defs><filter id="shadow" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity=".5"/></filter></defs>
+<g id="camera"><g id="edges"></g><g id="nodes"></g><g id="preview"></g></g>
+</svg>
+<div class="corner">BUBBLE MAP / WORKSPACE</div>
+<div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
+<div class="hint">Drag circles to move · Drag background to pan · Drag + onto another bubble</div>
+</div>
+<aside>
+<div class="aside-top"><div class="section-title">✎ Selected bubble</div><div id="counts"></div></div>
+<div class="inspector-grid">
+<div class="field"><label for="label">Name</label><input type="text" id="label" maxlength="60" autocomplete="off" value="My Map"></div>
+<div class="field color-field"><label for="color">Color</label><div class="colorrow"><input type="color" id="color" value="#9278f7"><span>Change node color</span></div></div>
+</div>
+<div class="actions">
+<button id="collapse">⊟ Collapse</button><button id="delete" class="danger">✕ Delete</button>
+<button id="save" class="wide">↧ Save locally</button><button id="reset" class="wide">↺ Reset sample</button>
+</div>
+<div id="status" role="status">Select a bubble to edit its name or add a child.</div>
+<div class="note">This editor works entirely in your browser. Changes are automatically saved on your device, not to a server. Use <b>Data</b> to export or import editable JSON maps. Hold Shift and click two nodes, or use the connecting handles, to link them.</div>
+</aside>
+</main>
+<div id="dialog" class="dialog" role="dialog" aria-modal="true" aria-label="JSON export and import">
+<div class="modal"><h2>Editable Map Data</h2><p>Copy this JSON to back up or share your tree. Paste a saved map and choose Import to load it.</p>
+<textarea id="json" spellcheck="false"></textarea>
+<div class="modal-buttons"><button id="copy">Copy JSON</button><button id="download">Download JSON</button><button id="import" class="primary">Import JSON</button><button id="close">Close</button></div>
+</div></div>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id),svg=$('canvas'),stage=$('stage'),camera=$('camera'),edgeLayer=$('edges'),nodeLayer=$('nodes'),preview=$('preview'),NS='http://www.w3.org/2000/svg',R=38,KEY='bubble-tree-studio-map-v1';
+const palette=['#9278f7','#30cda6','#50a8f0','#f4ad57','#f075ab','#55cadc','#e6c26d'];
+let nodes=[],edges=[],selected='root',serial=10,zoom=1,ox=0,oy=0,W=800,H=600,locked=false,connection=null,gesture=null,pointers=new Map(),undo=[],changed=false;
+function make(tag,attributes){const e=document.createElementNS(NS,tag);Object.keys(attributes||{}).forEach(k=>e.setAttribute(k,String(attributes[k])));return e}
+function get(id){return nodes.find(n=>n.id===id)}
+function say(s){$('status').textContent=s}
+function resize(){const b=stage.getBoundingClientRect();W=Math.max(200,b.width);H=Math.max(180,b.height);svg.setAttribute('viewBox','0 0 '+W+' '+H)}
+function snapshot(){return JSON.stringify({nodes,edges,selected,serial})}
+function store(){try{localStorage.setItem(KEY,snapshot())}catch(e){}}
+function checkpoint(){undo.push(snapshot());if(undo.length>40)undo.shift()}
+function sample(){
+resize();serial=10;
+nodes=[
+{id:'root',label:'My Map',x:0,y:0,color:palette[0]},
+{id:'p',label:'Projects',x:-200,y:145,color:palette[1]},
+{id:'l',label:'Learning',x:0,y:145,color:palette[2]},
+{id:'t',label:'Travel',x:200,y:145,color:palette[3]},
+{id:'a',label:'Game Ideas',x:-200,y:290,color:palette[4]},
+{id:'b',label:'AI Tools',x:0,y:290,color:palette[5]},
+{id:'c',label:'Destinations',x:200,y:290,color:palette[6]}
+];edges=[{from:'root',to:'p'},{from:'root',to:'l'},{from:'root',to:'t'},{from:'p',to:'a'},{from:'l',to:'b'},{from:'t',to:'c'}];
+selected='root';locked=false;connection=null;undo=[];sync();fit();store();
+}
+function hiddenSet(){
+const hidden=new Set();
+for(const n of nodes)if(n.collapsed){const seen=new Set([n.id]),queue=[n.id];while(queue.length){const id=queue.shift();for(const e of edges)if(e.from===id&&!seen.has(e.to)){seen.add(e.to);hidden.add(e.to);queue.push(e.to)}}}
+return hidden;
+}
+function split(text){
+const words=String(text||'Unnamed').trim().split(/\s+/).filter(Boolean),out=[''];
+for(let word of words){
+if(word.length>11)word=word.slice(0,10)+'…';
+if(out[out.length-1]&&out[out.length-1].length+word.length+1>11){if(out.length>=3)break;out.push('')}
+out[out.length-1]+=(out[out.length-1]?' ':'')+word;
+}
+return out;
+}
+function render(){
+camera.setAttribute('transform','translate('+ox+' '+oy+') scale('+zoom+')');
+edgeLayer.replaceChildren();nodeLayer.replaceChildren();preview.replaceChildren();
+const hidden=hiddenSet();
+for(const e of edges){
+const a=get(e.from),b=get(e.to);if(!a||!b||hidden.has(a.id)||hidden.has(b.id))continue;
+const dx=b.x-a.x,dy=b.y-a.y,length=Math.max(1,Math.hypot(dx,dy));
+const ax=a.x+dx*R/length,ay=a.y+dy*R/length,bx=b.x-dx*R/length,by=b.y-dy*R/length;
+const d='M '+ax+' '+ay+' C '+ax+' '+((ay+by)/2)+', '+bx+' '+((ay+by)/2)+', '+bx+' '+by;
+const active=a.id===selected||b.id===selected;
+edgeLayer.appendChild(make('path',{d,fill:'none',stroke:active?'#a9caff':'#647f9f','stroke-width':active?3:2,'stroke-opacity':active?.95:.75,'stroke-linecap':'round'}));
+}
+for(const n of nodes){
+if(hidden.has(n.id))continue;
+const active=n.id===selected,g=make('g',{'data-id':n.id,transform:'translate('+n.x+' '+n.y+')',style:'cursor:grab'});
+if(active)g.appendChild(make('circle',{r:R+10,fill:n.color,'fill-opacity':'.16'}));
+g.appendChild(make('circle',{r:R+3,fill:'#0c1930',stroke:active?'#d7f6ff':n.color,'stroke-width':active?3.4:2.5,filter:'url(#shadow)'}));
+g.appendChild(make('circle',{r:R-3,fill:n.color,'fill-opacity':active?.24:.16}));
+g.appendChild(make('ellipse',{cx:-9,cy:-18,rx:19,ry:9,fill:'#ffffff','fill-opacity':'.035'}));
+const txt=make('text',{'text-anchor':'middle',fill:'#f7fbff','font-size':11,'font-weight':720,'pointer-events':'none','font-family':'system-ui,sans-serif'});
+const lines=split(n.label);
+lines.forEach((s,i)=>{const t=make('tspan',{x:0,y:(i-(lines.length-1)/2)*13+4});t.textContent=s;txt.appendChild(t)});
+g.appendChild(txt);
+if(n.collapsed){g.appendChild(make('circle',{cx:0,cy:R-3,r:9,fill:'#384b6c'}));const badge=make('text',{x:0,y:R+1,'text-anchor':'middle',fill:'white','font-size':13,'pointer-events':'none'});badge.textContent='+';g.appendChild(badge)}
+const grip=make('g',{'data-handle':n.id,style:'cursor:crosshair'});
+grip.appendChild(make('circle',{cx:R-1,cy:R-1,r:13,fill:'#1b3452',stroke:n.color,'stroke-width':2}));
+const plus=make('text',{x:R-1,y:R+4,'text-anchor':'middle',fill:'white','font-size':17,'font-weight':700,'pointer-events':'none'});plus.textContent='+';grip.appendChild(plus);g.appendChild(grip);
+nodeLayer.appendChild(g);
+}
+if(gesture&&gesture.type==='link'&&gesture.point){const n=get(gesture.from);if(n)preview.appendChild(make('path',{d:'M '+n.x+' '+n.y+' L '+gesture.point.x+' '+gesture.point.y,stroke:'#f7d580','stroke-width':3,'stroke-dasharray':'7 5',fill:'none'}))}
+$('counts').textContent=nodes.length+' nodes / '+edges.length+' links';
+}
+function sync(){
+const n=get(selected)||nodes[0];if(n)selected=n.id;
+$('label').value=n?n.label:'';$('color').value=n?n.color:'#9278f7';
+$('collapse').textContent=n&&n.collapsed?'⊞ Expand':'⊟ Collapse';
+$('lock').textContent=locked?'🔒 View locked':'🔓 Lock view';$('lock').classList.toggle('active',locked);
+$('link').classList.toggle('active',!!connection);$('link').textContent=connection?'● Linking…':'↗ Connect';
+}
+function coords(e){const b=svg.getBoundingClientRect();return{x:(e.clientX-b.left)*W/b.width,y:(e.clientY-b.top)*H/b.height}}
+function toWorld(p){return{x:(p.x-ox)/zoom,y:(p.y-oy)/zoom}}
+function zoomAt(f,center){
+if(locked)return;
+const old=zoom;zoom=Math.max(.25,Math.min(3.5,zoom*f));ox=center.x-(center.x-ox)*zoom/old;oy=center.y-(center.y-oy)*zoom/old;render();
+}
+function fit(){
+resize();const hidden=hiddenSet(),visible=nodes.filter(n=>!hidden.has(n.id));if(!visible.length)return;
+const x1=Math.min(...visible.map(n=>n.x))-R-20,x2=Math.max(...visible.map(n=>n.x))+R+20,y1=Math.min(...visible.map(n=>n.y))-R-20,y2=Math.max(...visible.map(n=>n.y))+R+20;
+zoom=Math.min(1.3,Math.max(.25,Math.min((W-26)/(x2-x1),(H-26)/(y2-y1))));
+ox=W/2-(x1+x2)/2*zoom;oy=H/2-(y1+y2)/2*zoom;render();
+}
+function linkNodes(a,b){
+if(!a||!b||a===b){say('Choose a different bubble to connect.');return false}
+if(edges.some(e=>(e.from===a&&e.to===b)||(e.from===b&&e.to===a))){say('Those bubbles are already linked.');return false}
+checkpoint();edges.push({from:a,to:b});store();say('Connection added.');return true;
+}
+function select(id){
+if(!get(id))return;
+if(connection){if(connection===id){say('Choose a different bubble.');return}linkNodes(connection,id);connection=null}
+selected=id;changed=false;sync();render();if(!connection)say('Selected: '+get(id).label);
+}
+function add(child){
+const p=get(selected)||nodes[0];if(!p)return;
+checkpoint();const id='node-'+(++serial),count=edges.filter(e=>e.from===p.id).length;
+const at=child?{x:p.x+(count%5-2)*94,y:p.y+(p.y>H/zoom*.65?-140:145)}:toWorld({x:W/2+Math.random()*70-35,y:H/2+Math.random()*70-35});
+const n={id,label:child?'New branch':'New bubble',x:at.x,y:at.y,color:palette[serial%palette.length]};nodes.push(n);
+if(child){p.collapsed=false;edges.push({from:p.id,to:id})}
+selected=id;changed=false;sync();render();store();say('Bubble created. Edit its name below.');$('label').focus();$('label').select();
+}
+function arrange(){
+checkpoint();
+const levels=new Map([[nodes[0].id,0]]),queue=[nodes[0].id];
+while(queue.length){const id=queue.shift();for(const e of edges)if(e.from===id&&!levels.has(e.to)){levels.set(e.to,levels.get(id)+1);queue.push(e.to)}}
+for(const n of nodes)if(!levels.has(n.id))levels.set(n.id,Math.max(0,...levels.values())+1);
+const unique=[...new Set(levels.values())].sort((a,b)=>a-b);
+for(const level of unique){const a=nodes.filter(n=>levels.get(n.id)===level);const gap=Math.max(110,Math.min(170,W/Math.max(1,a.length)));a.forEach((n,i)=>{n.x=(i-(a.length-1)/2)*gap;n.y=level*150})}
+fit();store();say('Tree organized into levels.');
+}
+function load(raw){
+try{
+const obj=JSON.parse(raw);
+if(!obj||!Array.isArray(obj.nodes)||!Array.isArray(obj.edges)||obj.nodes.length<1||obj.nodes.length>500)throw Error('Invalid map size');
+if(!obj.nodes.every(n=>typeof n.id==='string'&&typeof n.label==='string'&&Number.isFinite(n.x)&&Number.isFinite(n.y)&&/^#[0-9a-f]{6}$/i.test(n.color)))throw Error('Invalid nodes');
+const ids=new Set(obj.nodes.map(n=>n.id));if(ids.size!==obj.nodes.length||!obj.edges.every(e=>ids.has(e.from)&&ids.has(e.to)))throw Error('Invalid edges');
+nodes=obj.nodes.map(n=>({id:n.id,label:n.label,x:n.x,y:n.y,color:n.color,collapsed:!!n.collapsed}));edges=obj.edges.map(e=>({from:e.from,to:e.to}));
+serial=Number.isSafeInteger(obj.serial)?obj.serial:1000+nodes.length;selected=ids.has(obj.selected)?obj.selected:nodes[0].id;
+connection=null;sync();fit();store();return true;
+}catch(err){say('Invalid JSON: '+err.message);return false}
+}
+function command(id){
+switch(id){
+case 'add':add(false);break;
+case 'child':add(true);break;
+case 'link':connection=connection?null:selected;sync();say(connection?'Tap another bubble to complete the link.':'Connection mode off.');break;
+case 'arrange':arrange();break;
+case 'lock':locked=!locked;sync();say(locked?'Background panning and zooming locked. Bubble dragging stays enabled.':'View unlocked.');break;
+case 'fit':fit();break;
+case 'zin':zoomAt(1.3,{x:W/2,y:H/2});break;
+case 'zout':zoomAt(1/1.3,{x:W/2,y:H/2});break;
+case 'undo':if(undo.length){const s=undo.pop();load(s);say('Undid last edit.')}else say('Nothing to undo.');break;
+case 'collapse':{const n=get(selected);if(n){checkpoint();n.collapsed=!n.collapsed;sync();render();store();say(n.collapsed?'Branch hidden.':'Branch expanded.')}}break;
+case 'delete':if(selected===nodes[0].id){say('The root node cannot be deleted. Rename it instead.');break}
+checkpoint();nodes=nodes.filter(n=>n.id!==selected);edges=edges.filter(e=>e.from!==selected&&e.to!==selected);selected=nodes[0].id;sync();render();store();say('Bubble deleted.');break;
+case 'save':store();say('Saved to this browser.');break;
+case 'reset':if(window.confirm('Replace your current map with the sample tree? Export JSON first if you want a backup.')){sample();say('Sample tree restored.')}break;
+case 'data':$('json').value=JSON.stringify(JSON.parse(snapshot()),null,2);$('dialog').classList.add('open');break;
+case 'close':$('dialog').classList.remove('open');break;
+case 'copy':{const t=$('json');const s=t.value;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(s).then(()=>say('JSON copied to clipboard.')).catch(()=>{t.select();say('Select and copy the JSON manually.')})}else{t.select();say('JSON selected for copying.')}}break;
+case 'download':{const blob=new Blob([$('json').value],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='bubble-tree-map.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);say('Map JSON downloaded.')}break;
+case 'import':{checkpoint();if(load($('json').value)){$('dialog').classList.remove('open');say('JSON imported successfully.')}}break;
+}
+}
+['add','child','link','arrange','lock','fit','undo','data','collapse','delete','save','reset','zin','zout','copy','download','import','close'].forEach(id=>$(id).addEventListener('click',()=>command(id)));
+$('label').addEventListener('focus',()=>changed=false);
+$('label').addEventListener('input',e=>{const n=get(selected);if(!n)return;if(!changed){checkpoint();changed=true}n.label=e.target.value;render();store()});
+$('color').addEventListener('input',e=>{const n=get(selected);if(!n)return;if(!changed){checkpoint();changed=true}n.color=e.target.value;render();store()});
+$('dialog').addEventListener('click',e=>{if(e.target===$('dialog'))command('close')});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')command('close');if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();command('undo')}});
+const stop=e=>{if(e.cancelable)e.preventDefault();e.stopPropagation()};
+stage.addEventListener('touchmove',stop,{passive:false,capture:true});
+stage.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+stage.addEventListener('touchend',e=>e.stopPropagation(),{passive:true});
+svg.addEventListener('dragstart',e=>e.preventDefault());
+svg.addEventListener('pointerdown',e=>{
+if(e.button!==undefined&&e.button!==0)return;
+e.preventDefault();e.stopPropagation();
+const p=coords(e);pointers.set(e.pointerId,p);
+try{svg.setPointerCapture(e.pointerId)}catch(err){}
+if(pointers.size===2){
+if(!locked){const a=[...pointers.values()],cx=(a[0].x+a[1].x)/2,cy=(a[0].y+a[1].y)/2;gesture={type:'pinch',startDistance:Math.max(1,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)),startZoom:zoom,anchor:toWorld({x:cx,y:cy})}}
+return;
+}
+const handle=e.target.closest('[data-handle]'),g=e.target.closest('[data-id]');
+if(handle){gesture={type:'link',from:handle.getAttribute('data-handle'),point:toWorld(p)};render();return}
+if(g){
+const id=g.getAttribute('data-id');
+if(e.shiftKey&&!connection&&id!==selected){linkNodes(selected,id);select(id);return}
+if(connection){select(id);gesture=null;return}
+select(id);const n=get(id);gesture={type:'node',id,start:toWorld(p),origin:{x:n.x,y:n.y},moved:false};
+}else if(!locked){gesture={type:'pan',start:p,origin:{x:ox,y:oy}};svg.classList.add('grabbing')}
+else gesture=null;
+});
+svg.addEventListener('pointermove',e=>{
+if(!pointers.has(e.pointerId))return;
+e.preventDefault();e.stopPropagation();const p=coords(e);pointers.set(e.pointerId,p);
+if(gesture&&gesture.type==='pinch'&&pointers.size>1){
+const a=[...pointers.values()],cx=(a[0].x+a[1].x)/2,cy=(a[0].y+a[1].y)/2;
+const distance=Math.max(1,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y));
+zoom=Math.max(.25,Math.min(3.5,gesture.startZoom*distance/gesture.startDistance));
+ox=cx-gesture.anchor.x*zoom;oy=cy-gesture.anchor.y*zoom;render();return;
+}
+if(!gesture||pointers.size!==1)return;
+if(gesture.type==='pan'){ox=gesture.origin.x+p.x-gesture.start.x;oy=gesture.origin.y+p.y-gesture.start.y;render()}
+if(gesture.type==='node'){
+const n=get(gesture.id),w=toWorld(p);if(!n)return;const dx=w.x-gesture.start.x,dy=w.y-gesture.start.y;
+if(!gesture.moved&&Math.hypot(dx,dy)>3){checkpoint();gesture.moved=true}
+if(gesture.moved){n.x=gesture.origin.x+dx;n.y=gesture.origin.y+dy;render()}
+}
+if(gesture.type==='link'){gesture.point=toWorld(p);render()}
+});
+function pointerEnd(e){
+if(!pointers.has(e.pointerId))return;
+e.preventDefault();e.stopPropagation();
+if(gesture&&gesture.type==='link'&&pointers.size===1){
+const p=toWorld(coords(e));let to=null,dist=R+15;
+for(const n of nodes){const d=Math.hypot(n.x-p.x,n.y-p.y);if(d<dist){to=n.id;dist=d}}
+if(to&&to!==gesture.from)linkNodes(gesture.from,to);else say('Drop the + handle onto another bubble.');
+}
+if(gesture&&gesture.type==='node'&&gesture.moved){store();say('Bubble moved. Connections updated.')}
+pointers.delete(e.pointerId);svg.classList.remove('grabbing');
+if(pointers.size<2)gesture=null;
+render();
+}
+svg.addEventListener('pointerup',pointerEnd);
+svg.addEventListener('pointercancel',pointerEnd);
+svg.addEventListener('lostpointercapture',e=>{pointers.delete(e.pointerId);if(!pointers.size)gesture=null});
+svg.addEventListener('wheel',e=>{e.preventDefault();e.stopPropagation();zoomAt(e.deltaY<0?1.10:.91,coords(e))},{passive:false});
+let prevWidth=0,prevHeight=0;
+if(window.ResizeObserver)new ResizeObserver(()=>{const w=stage.clientWidth,h=stage.clientHeight;if(prevWidth&&Math.abs(w-prevWidth)+Math.abs(h-prevHeight)>18){resize();fit()}prevWidth=w;prevHeight=h}).observe(stage);
+let restored=false;
+try{const s=localStorage.getItem(KEY);if(s){restored=load(s);if(restored)say('Your saved map has been restored automatically.')}}catch(e){}
+if(!restored)sample();
+})();
+</script>
+</body></html>
